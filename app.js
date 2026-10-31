@@ -42,3 +42,17 @@ dialog.addEventListener('close', () => {
   document.body.classList.remove('modal-open');
   contactTrigger?.focus({preventScroll: true});
 });
+
+const floatingTop = document.querySelector('.floating-top-button');
+let footerVisible = false;
+function updateBackToTop() {
+  floatingTop.hidden = window.scrollY <= Math.max(600, window.innerHeight) || footerVisible;
+}
+window.addEventListener('scroll', updateBackToTop, { passive: true });
+window.addEventListener('resize', updateBackToTop);
+const footerObserver = new IntersectionObserver(entries => {
+  footerVisible = entries[0].isIntersecting;
+  updateBackToTop();
+});
+footerObserver.observe(document.querySelector('footer'));
+updateBackToTop();
