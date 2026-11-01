@@ -1,0 +1,108 @@
+name: Site health check
+
+on:
+  schedule:
+    - cron: '17,47 * * * *'
+  workflow_dispatch:
+  workflow_run:
+    workflows: ['pages build and deployment']
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: portfolio-site-health
+  cancel-in-progress: false
+
+jobs:
+  check:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SITE_URL: https://dreamshrouded.github.io/denis-suvorov-portfolio/
+    steps:
+      - name: Check public site and resources
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import concurrent.futures, datetime, html.parser, json, os, re, sys, time, urllib.request
+          from urllib.parse import urljoin, urlparse
+
+          base = os.environ['SITE_URL']
+          results = []
+          def request(path, method='GET'):
+              last = None
+              for attempt in range(3):
+                  try:
+                      req = urllib.request.Request(urljoin(base, path), method=method, headers={'User-Agent':'Portfolio-Health-Monitor/1.0', 'Cache-Control':'no-cache'})
+                      with urllib.request.urlopen(req, timeout=15) as response:
+                          if response.status != 200:
+                              raise ValueError('HTTP ' + str(response.status))
+                          if urlparse(response.url).hostname != urlparse(base).hostname:
+                              raise ValueError('Unexpected redirect')
+                          return response.read() if method == 'GET' else b''
+                  except Exception as error:
+                      last = error
+                      if attempt < 2: time.sleep(3)
+              raise last
+
+          class Page(html.parser.HTMLParser):
+              def __init__(self):
+                  super().__init__(); self.ids=set(); self.assets=set(); self.email=False; self.telegram=False
+              def handle_starttag(self, tag, attrs):
+                  attrs=dict(attrs)
+                  if 'id' in attrs: self.ids.add(attrs['id'])
+                  source=attrs.get('src') if tag in ('script','img') else attrs.get('href') if tag=='link' else None
+                  if source and not urlparse(source).scheme and not source.startswith('//'): self.assets.add(source)
+                  href=attrs.get('href','')
+                  if href.startswith('mailto:'): self.email=True
+                  if href.startswith('https://t.me/'): self.telegram=True
+
+          def run(label, fn):
+              start=time.monotonic()
+              try:
+                  fn(); row=(label,True,str(round((time.monotonic()-start)*1000))+' ms')
+              except Exception as error:
+                  row=(label,False,str(error).replace('|','/').replace('\n',' ')[:300])
+              return row
+
+          page=Page()
+          def main_page():
+              page.feed(request('./').decode('utf-8'))
+              assert {'hero-title','experience','expertise','contact-dialog'} <= page.ids, 'Missing required page sections'
+              assert page.email and page.telegram, 'Missing contact links'
+          results.append(run('Main page and contacts',main_page))
+
+          def content():
+              data=json.loads(request('content.json'))
+              schema=request('content.js').decode('utf-8').split('const fields=',1)[1]
+              fields=json.JSONDecoder().raw_decode(schema)[0]
+              assert data.get('version')==1 and isinstance(data.get('values'),dict), 'Invalid content format'
+              for field in fields:
+                  value=data['values'].get(field['key'])
+                  assert isinstance(value,str) and value.strip() and len(value)<=field['maxLength'], 'Invalid content field: '+field['key']
+                  if field['type']=='email': assert re.fullmatch(r'[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+',value), 'Invalid email'
+                  if field['type']=='telegram': assert re.fullmatch(r'@[A-Za-z][A-Za-z0-9_]{4,31}',value), 'Invalid Telegram'
+                  if field['type']=='url':
+                      url=urlparse(value)
+                      assert url.scheme=='https' and url.hostname=='hh.ru' and url.path.startswith('/resume/') and not url.username and not url.password, 'Invalid resume URL'
+          results.append(run('Editable content and schema',content))
+          def admin():
+              body=request('admin.html').decode('utf-8')
+              assert 'content-form' in body and 'health-view' in body, 'Missing management panel'
+          results.append(run('Management panel',admin))
+          resources=page.assets | {'styles.css','app.js','content.js','theme-init.js','admin.js','admin.css','favicon.svg','vysota.png','sber.png','employcity.png'}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
+              futures=[pool.submit(run,path,lambda p=path:request(p,'HEAD')) for path in sorted(resources)]
+              results.extend(f.result() for f in futures)
+          lines=['## Portfolio health check','',datetime.datetime.now(datetime.timezone.utc).isoformat(),'',base,'','| Resource | Result | Details |','|---|---|---|']
+          lines.extend('| '+label+' | '+('OK' if success else 'FAILED')+' | '+detail+' |' for label,success,detail in results)
+          summary='\n'.join(lines)+'\n'
+          print(summary)
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as file: file.write(summary)
+          if not all(success for _,success,_ in results):
+              print('::error::Site health check failed. Open the job summary for details.')
+              sys.exit(1)
+          PY
