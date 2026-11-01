@@ -1,0 +1,1 @@
+(function(){var theme;try{theme=localStorage.getItem('portfolio-theme')}catch(e){}if(theme!=='light'&&theme!=='dark'){theme=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.dataset.theme=theme;document.querySelector('meta[name="theme-color"]').content=theme==='dark'?'#141e25':'#e9eff2'})();

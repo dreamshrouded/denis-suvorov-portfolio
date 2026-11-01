@@ -56,3 +56,47 @@ const footerObserver = new IntersectionObserver(entries => {
 });
 footerObserver.observe(document.querySelector('footer'));
 updateBackToTop();
+
+// Progressive reveal: only off-screen blocks are hidden, and only after JS is ready.
+const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+const revealElements = [...document.querySelectorAll('.key-results,.section-heading,.work-card,.expertise-item,.closing-card')];
+let revealObserver;
+function setupReveals() {
+  revealObserver?.disconnect();
+  revealElements.forEach(element => element.classList.remove('reveal-pending'));
+  if (motionPreference.matches || !('IntersectionObserver' in window)) return;
+  revealObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.remove('reveal-pending');
+        entry.target.classList.add('reveal-shown');
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, {threshold:0, rootMargin:'0px 0px -36px 0px'});
+  revealElements.forEach(element => {
+    element.classList.add('reveal-element');
+    if (!element.classList.contains('reveal-shown') && element.getBoundingClientRect().top >= window.innerHeight) {
+      element.classList.add('reveal-pending'); revealObserver.observe(element);
+    }
+  });
+}
+setupReveals();
+motionPreference.addEventListener('change', setupReveals);
+// Keyboard focus must never land inside an invisible card.
+document.addEventListener('focusin', event => event.target.closest('.reveal-pending')?.classList.remove('reveal-pending'));
+
+const isContentPreview = new URLSearchParams(window.location.search).get('preview') === '1' && window.parent !== window;
+if (isContentPreview) {
+  document.querySelectorAll('.reveal-pending').forEach(element=>element.classList.remove('reveal-pending'));
+  window.addEventListener('message', event => {
+    if (event.source !== window.parent || event.origin !== window.location.origin || event.data?.type !== 'portfolio-preview') return;
+    try { window.PortfolioContent.apply(event.data.content); if(['light','dark'].includes(event.data.theme))applyTheme(event.data.theme); } catch (_) {}
+  });
+  window.parent.postMessage({type:'portfolio-preview-ready'}, window.location.origin);
+} else {
+  fetch('content.json', {cache:'no-cache',signal:AbortSignal.timeout(10000)})
+    .then(response => {if(!response.ok) throw new Error('Content unavailable'); return response.json();})
+    .then(data => window.PortfolioContent.apply(data))
+    .catch(() => { /* The complete original HTML remains readable if content cannot be fetched. */ });
+}
