@@ -138,7 +138,7 @@ $('#refresh-history').addEventListener('click',refreshHistory);
 $('#check-now').addEventListener('click',async()=>{
  const button=$('#check-now');button.disabled=true;const list=$('#checks');list.replaceChildren();let failed=0;
  $('#live-status').textContent='Проверяем…';setTone($('#live-status'),'');
- const resources=[['Главная страница','./','html'],['Содержимое','content.json','json'],['Оформление','styles.css'],['Сценарии сайта','app.js'],['Модель содержимого','content.js'],['Настройка темы','theme-init.js'],['Панель управления','admin.html','admin'],['Сценарии панели','admin.js'],['Оформление панели','admin.css'],['Иллюстрация «Высота»','vysota.png'],['Иллюстрация Сбер','sber.png'],['Иллюстрация Employcity','employcity.png'],['Иконка сайта','favicon.svg']];
+ const resources=[['Главная страница','./','html'],['Содержимое','content.json','json'],['Оформление','styles.css'],['Сценарии сайта','app.js'],['Модель содержимого','content.js'],['Настройка темы','theme-init.js'],['Панель управления','admin.html','admin'],['Сценарии панели','admin.js'],['Оформление панели','admin.css'],['Иллюстрация «Высота»','vysota-960.webp'],['Иллюстрация Сбер','sber-960.webp'],['Иллюстрация Employcity','employcity-960.webp'],['Иконка сайта','favicon.svg']];
  await Promise.all(resources.map(async([label,path,type])=>{
   const li=document.createElement('li'),copy=document.createElement('div'),title=document.createElement('span'),small=document.createElement('small'),status=document.createElement('span');copy.className='check-label';title.textContent=label;small.textContent=path;copy.append(title,small);status.textContent='Проверяем…';status.className='check-result';li.append(copy,status);list.append(li);const start=performance.now();
   try{
