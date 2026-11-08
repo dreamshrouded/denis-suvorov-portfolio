@@ -9,7 +9,7 @@
   --shadow:12px 15px 32px rgba(111,137,152,.17),-9px -9px 26px rgba(255,255,255,.75);
   --button-shadow:5px 6px 15px rgba(111,137,152,.2),-5px -5px 14px rgba(255,255,255,.8);
   --inset:inset 1px 1px 1px rgba(255,255,255,.8); --inset-bg:rgba(255,255,255,.32);
-  --mint-glow:#c6e0d6; --blue-glow:#d6ddec; --core-fill:linear-gradient(140deg,rgba(255,255,255,.85),rgba(218,238,232,.15) 60%,rgba(255,255,255,.65));
+  --peach-glow:rgba(235,170,141,.56); --mint-glow:#c6e0d6; --blue-glow:#d6ddec; --core-fill:linear-gradient(140deg,rgba(255,255,255,.85),rgba(218,238,232,.15) 60%,rgba(255,255,255,.65));
   --core-shadow:20px 28px 55px rgba(77,114,121,.2),inset 2px 2px 4px #fff,inset -4px -5px 14px rgba(167,206,197,.36);
   --dialog:linear-gradient(125deg,#f5fafc,#e0efea); --backdrop:rgba(33,53,64,.36);
   font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-synthesis:none;
@@ -25,7 +25,7 @@
   --shadow:12px 15px 32px rgba(4,10,16,.44),-7px -7px 24px rgba(89,123,135,.08);
   --button-shadow:5px 6px 15px rgba(0,8,14,.34),-4px -4px 12px rgba(114,150,160,.07);
   --inset:inset 1px 1px 1px rgba(208,236,235,.1); --inset-bg:rgba(158,203,207,.06);
-  --mint-glow:#315e54; --blue-glow:#294658; --core-fill:linear-gradient(140deg,rgba(107,153,149,.22),rgba(27,56,59,.2) 60%,rgba(98,146,139,.22));
+  --peach-glow:rgba(170,93,80,.31); --mint-glow:#315e54; --blue-glow:#294658; --core-fill:linear-gradient(140deg,rgba(107,153,149,.22),rgba(27,56,59,.2) 60%,rgba(98,146,139,.22));
   --core-shadow:20px 28px 55px rgba(0,12,17,.5),inset 2px 2px 3px rgba(200,245,229,.13),inset -4px -5px 14px rgba(107,176,150,.1);
   --dialog:linear-gradient(125deg,#293e48,#1d3337); --backdrop:rgba(3,12,18,.65);
   color-scheme:dark;
@@ -61,10 +61,13 @@ footer>.back-to-top,.back-to-top{display:inline-flex;align-items:center;justify-
 @media(max-width:700px){.closing-grid{margin-top:48px;gap:22px}.closing-grid>.closing-card{aspect-ratio:auto;min-height:390px;padding:27px 26px;overflow:visible}.closing-card-heading .eyebrow{font-size:8px;letter-spacing:1.2px}.closing-card-body{margin:22px 0 26px}.closing-grid .closing-card h2{font-size:31px;letter-spacing:-1px}.closing-grid .education-card h2{font-size:39px}.closing-grid .closing-card-body>p{font-size:14px;margin-top:16px}.closing-grid .closing-card-body>.contact-channels{font-size:12px;margin-top:17px}.closing-grid .contact-section .contact-cta{font-size:16px;min-height:62px;margin-top:auto}.education-program{padding-top:20px}.education-program h3{font-size:21px;margin-bottom:20px}.closing-grid .education-card .university-name{font-size:13px}.university-name br{display:none}}
 @media(max-width:360px){.closing-grid>.closing-card{padding:25px 22px}.closing-grid .closing-card h2{font-size:27px}.closing-grid .education-card h2{font-size:35px}.closing-grid .closing-card-body>p{font-size:13px}.education-program h3{font-size:19px}.closing-grid .closing-card-body>.contact-channels{font-size:11px}}
 
-/* Motion never controls document flow; no content is hidden without JavaScript. */
-.reveal-element{transition:opacity .72s cubic-bezier(.22,.61,.36,1),transform .72s cubic-bezier(.22,.61,.36,1)}
-.reveal-pending{opacity:0;transform:translateY(24px)}
-.reveal-shown{opacity:1;transform:translateY(0)}
+/* Static warm washes complement the mint and blue, without downloading an image. */
+:root:not([data-theme="dark"]) .portfolio-site{--muted:#3d5865;--subtle:#4d6671;--accent:#315f53}
+.portfolio-site{isolation:isolate;background-image:radial-gradient(ellipse 820px 660px at -8% 180px,var(--peach-glow),transparent 76%),radial-gradient(ellipse 880px 1080px at 115% 43%,var(--peach-glow),transparent 76%),radial-gradient(ellipse 760px 660px at -7% 96%,var(--peach-glow),transparent 77%);background-repeat:no-repeat}
+@media(max-width:700px){.portfolio-site{background-image:radial-gradient(ellipse 470px 740px at -35% 260px,var(--peach-glow),transparent 78%),radial-gradient(ellipse 500px 1600px at 140% 43%,var(--peach-glow),transparent 80%),radial-gradient(ellipse 500px 900px at -40% 97%,var(--peach-glow),transparent 80%)}}
+/* Pending blocks retain their layout bounds, so the observer can see them. */
+.reveal-pending{opacity:0}
+.reveal-shown{opacity:1}
 .reveal-pending:focus-within{opacity:1;transform:none}
 .edited-copy{white-space:pre-line}
 .admin-entry{font-size:11px;color:var(--muted);padding:8px 0;display:inline-flex;gap:8px;align-items:center;min-height:40px}
