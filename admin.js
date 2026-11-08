@@ -62,7 +62,8 @@ async function loadContent(){
 $('#reload-content').addEventListener('click',()=>{if(changed().length&&!window.confirm('Загрузить версию с GitHub? Несохранённые изменения в этой вкладке будут потеряны.'))return;loadContent();});
 $('#content-form').addEventListener('submit',event=>event.preventDefault());
 window.addEventListener('beforeunload',event=>{if(changed().length){event.preventDefault();event.returnValue='';}});
-window.addEventListener('pagehide',()=>{token='';$('#github-token').value='';});
+window.addEventListener('pagehide',()=>{window.PortfolioOwnerSession?.clear();token='';$('#github-token').value='';});
+window.addEventListener('pageshow',event=>{if(event.persisted){$('#connection-status').textContent='Публикация защищена GitHub';$('#open-connect').hidden=false;$('#disconnect').hidden=true;}});
 
 const themeButton=$('#admin-theme');
 function syncTheme(){const dark=document.documentElement.dataset.theme==='dark';themeButton.textContent=dark?'Светлая тема':'Тёмная тема';themeButton.setAttribute('aria-label',dark?'Включить светлую тему':'Включить тёмную тему');}
@@ -75,7 +76,7 @@ document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener
 document.querySelectorAll('[data-close]').forEach(button=>button.addEventListener('click',()=>$('#'+button.dataset.close).close()));
 const connect=$('#connect-dialog');
 $('#open-connect').addEventListener('click',()=>connect.showModal());
-$('#disconnect').addEventListener('click',()=>{token='';$('#connection-status').textContent='Публикация защищена GitHub';$('#open-connect').hidden=false;$('#disconnect').hidden=true;message('Подключение отключено. Ключ удалён из памяти вкладки.');});
+$('#disconnect').addEventListener('click',()=>{window.PortfolioOwnerSession?.clear();token='';$('#connection-status').textContent='Публикация защищена GitHub';$('#open-connect').hidden=false;$('#disconnect').hidden=true;message('Подключение отключено. Ключ удалён из памяти вкладки.');});
 connect.addEventListener('close',()=>{$('#github-token').value='';});
 $('#connect-form').addEventListener('submit',async event=>{
  event.preventDefault();const input=$('#github-token');const candidate=input.value.trim();input.value='';
@@ -84,9 +85,10 @@ $('#connect-form').addEventListener('submit',async event=>{
  try{
   const repository=await github('');
   if(!repository.permissions?.push)throw Error('У этого ключа нет права записи в репозиторий сайта.');
+  await window.PortfolioOwnerSession.connect(token);
   // Checking repository ownership does not expose or save the credential.
-  $('#connection-status').textContent='GitHub подключён · доступ к публикации';$('#open-connect').hidden=true;$('#disconnect').hidden=false;connect.close();message('GitHub подключён. Просмотрите изменения перед публикацией.');
- }catch(error){token='';$('#connect-message').textContent=error.message||'Подключение не удалось. Проверьте соединение.';}
+  $('#connection-status').textContent='GitHub подключён · доступ к публикации';$('#open-connect').hidden=true;$('#disconnect').hidden=false;connect.close();message('GitHub владельца подключён. Нажмите «Открыть сайт»: в его шапке появится кнопка управления. Оставьте эту панель открытой.');
+ }catch(error){window.PortfolioOwnerSession?.clear();token='';$('#connect-message').textContent=error.message||'Подключение не удалось. Проверьте соединение.';}
  finally{submit.disabled=false;}
 });
 
